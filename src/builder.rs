@@ -1,6 +1,6 @@
 use byteorder::{ByteOrder, BigEndian, WriteBytesExt};
 
-use {Opcode, ResponseCode, Header, QueryType, QueryClass};
+use {Opcode, ResponseCode, Header, QueryType, QueryClass, Type, Class};
 
 /// Allows to build a DNS packet
 ///
@@ -35,6 +35,28 @@ impl Builder {
         head.write(&mut buf[..12]);
         Builder { buf: buf }
     }
+
+    pub fn new_response(id: u16, rc: ResponseCode, tc: bool, 
+        rd: bool, ra:bool/*, ad: bool, cd: bool*/) -> Builder {
+        let mut buf = Vec::with_capacity(512);
+        let head = Header {
+            id: id,
+            query: false,
+            opcode: Opcode::StandardQuery,
+            authoritative: false,
+            truncated: tc,
+            recursion_desired: rd,
+            recursion_available: ra,
+            response_code: rc,
+            questions: 0,
+            answers: 0,
+            nameservers: 0,
+            additional: 0,
+        };
+        buf.extend([0u8; 12].iter());
+        head.write(&mut buf[..12]);
+        Builder { buf: buf }
+    }
     /// Adds a question to the packet
     ///
     /// # Panics
@@ -57,6 +79,24 @@ impl Builder {
             panic!("Too many questions");
         }
         BigEndian::write_u16(&mut self.buf[4..6], oldq+1);
+        self
+    }
+
+    // TODO(david-cao): untested, only works for type A
+    pub fn add_answer(&mut self, aname: &str, atype: Type,
+        aclass: Class, ttl: u32, data: u32) -> &mut Builder
+    {
+        self.write_name(aname);
+        self.buf.write_u16::<BigEndian>(atype as u16).unwrap();
+        self.buf.write_u16::<BigEndian>(aclass as u16).unwrap();
+        self.buf.write_u32::<BigEndian>(ttl).unwrap();
+        self.buf.write_u16::<BigEndian>(4).unwrap();
+        self.buf.write_u32::<BigEndian>(data).unwrap();
+        let olda = BigEndian::read_u16(&self.buf[6..8]);
+        if olda == 65535 {
+            panic!("Too many answers");
+        }
+        BigEndian::write_u16(&mut self.buf[6..8], olda+1);
         self
     }
     fn write_name(&mut self, name: &str) {
@@ -97,6 +137,12 @@ impl Builder {
 mod test {
     use QueryType as QT;
     use QueryClass as QC;
+    use Type as T;
+    use Class as C;
+    use byteorder::{ByteOrder, BigEndian, WriteBytesExt};
+
+    use {Opcode, ResponseCode, Header, QueryType, QueryClass, Type, Class};
+    use std::net::Ipv4Addr;
     use super::Builder;
 
     #[test]
@@ -115,5 +161,19 @@ mod test {
         let result = b"[\xd9\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\
             \x0c_xmpp-server\x04_tcp\x05gmail\x03com\x00\x00!\x00\x01";
         assert_eq!(&bld.build().unwrap()[..], &result[..]);
+    }
+
+    #[test]
+    fn build_response() {
+        let ip = Ipv4Addr::new(158, 130, 68, 91);
+        let ipnum = BigEndian::read_u32(&ip.octets());
+        let mut bld = Builder::new_response(23513, ResponseCode::NoError, false, true, true);
+        bld.add_question("seas.upenn.edu", QT::A, QC::IN);
+        bld.add_answer("seas.upenn.edu", T::A, C::IN, 7130, ipnum);
+        let result = bld.build().unwrap();
+        println!("{:?}", result);
+
+        // let res = b""
+
     }
 }
