@@ -1,12 +1,62 @@
 use std::i32;
 
-use byteorder::{BigEndian, ByteOrder};
+// use byteorder::{BigEndian, ByteOrder};
+use byteorder::{ByteOrder, BigEndian, WriteBytesExt};
+
 
 use {Header, Packet, Error, Question, Name, QueryType, QueryClass};
 use {Type, Class, ResourceRecord, RRData};
 
 
 impl<'a> Packet<'a> {
+    // pub fn to_buffer(&self) -> Result<Vec<u8>,Vec<u8>> {
+    //     // create buffer and write head to it
+    //     let mut buf = Vec::with_capacity(512);
+    //     buf.extend([0u8; 12].iter());
+    //     self.header.write(&mut buf[..12]);
+
+    //     // build questions
+    //     for q in self.questions {
+    //         // write name
+    //         for part in q.qname.labels {
+    //             // assert!(part.len() < 63);
+    //             // let ln = part.len() as u8;
+    //             buf.push(*part);
+    //             // buf.extend(part);
+    //         }
+    //         buf.push(0);
+
+    //         buf.write_u16::<BigEndian>(q.qtype as u16).unwrap();
+    //         buf.write_u16::<BigEndian>(q.qclass as u16).unwrap();
+    //         let oldq = BigEndian::read_u16(&buf[4..6]);
+    //         if oldq == 65535 {
+    //             panic!("Too many questions");
+    //         }
+    //         BigEndian::write_u16(&mut buf[4..6], oldq+1);
+    //     }
+    //     // build answers
+    //     for a in self.answers {
+    //         // write name
+    //         for part in a.name.labels {
+    //             // assert!(part.len() < 63);
+    //             // let ln = part.len() as u8;
+    //             buf.push(*part);
+    //             // buf.extend(part);
+    //         }
+    //         buf.push(0);
+
+    //         buf.write_u16::<BigEndian>(a.rtype as u16).unwrap();
+    //         buf.write_u16::<BigEndian>(a.cls as u16).unwrap();
+    //         buf.write_u32::<BigEndian>(a.ttl as u32).unwrap();
+    //         buf.write_u16::<BigEndian>(a.cls as u16).unwrap();
+    //         let oldq = BigEndian::read_u16(&buf[4..6]);
+    //         if oldq == 65535 {
+    //             panic!("Too many questions");
+    //         }
+    //         BigEndian::write_u16(&mut buf[4..6], oldq+1);
+    //     }
+    // }
+
     pub fn parse(data: &[u8]) -> Result<Packet, Error> {
         let header = try!(Header::parse(data));
         let mut offset = Header::size();
@@ -57,6 +107,7 @@ impl<'a> Packet<'a> {
             offset += rdlen;
             answers.push(ResourceRecord {
                 name: name,
+                // rtype: typ,
                 cls: cls,
                 ttl: ttl,
                 data: data,

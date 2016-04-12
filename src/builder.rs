@@ -36,6 +36,12 @@ impl Builder {
         Builder { buf: buf }
     }
 
+
+    /// Creates a new response
+    /// 
+    /// Similar to `new_query`, all sections are empty. You
+    /// will need to add all your questions first, then add
+    /// your answers.
     pub fn new_response(id: u16, rc: ResponseCode, tc: bool, 
         rd: bool, ra:bool/*, ad: bool, cd: bool*/) -> Builder {
         let mut buf = Vec::with_capacity(512);
@@ -82,6 +88,14 @@ impl Builder {
         self
     }
 
+
+    /// Adds an answer to the packet
+    ///
+    /// NOTE: You need to add all you questions first before adding answers.
+    /// # Panics
+    /// 
+    /// * There are already 65535 answers in the buffer.
+    /// * When name is invalid
     // TODO(david-cao): untested, only works for type A
     pub fn add_answer(&mut self, aname: &str, atype: Type,
         aclass: Class, ttl: u32, data: u32) -> &mut Builder
