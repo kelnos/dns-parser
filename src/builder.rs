@@ -182,14 +182,13 @@ mod test {
     #[test]
     fn build_response() {
         let ip = Ipv4Addr::new(158, 130, 68, 91);
-        let ipnum = BigEndian::read_u32(&ip.octets());
+        let ipnum = ip.octets().to_vec();
         let mut bld = Builder::new_response(23513, ResponseCode::NoError, false, true, true);
         bld.add_question("seas.upenn.edu", QT::A, QC::IN);
         bld.add_answer("seas.upenn.edu", T::A, C::IN, 7130, ipnum);
         let result = bld.build().unwrap();
         println!("{:?}", result);
 
-        // let res = b""
-
+        [91, 217, 129, 128, 0, 1, 0, 1, 0, 0, 0, 0, 4, 115, 101, 97, 115, 5, 117, 112, 101, 110, 110, 3, 101, 100, 117, 0, 0, 1, 0, 1, 4, 115, 101, 97, 115, 5, 117, 112, 101, 110, 110, 3, 101, 100, 117, 0, 0, 1, 0, 1, 0, 0, 27, 218, 0, 4, 158, 130, 68, 91]
     }
 }
