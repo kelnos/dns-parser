@@ -49,7 +49,7 @@ impl Builder {
             id: id,
             query: false,
             opcode: Opcode::StandardQuery,
-            authoritative: false,
+            authoritative: true,
             truncated: tc,
             recursion_desired: rd,
             recursion_available: ra,
@@ -188,7 +188,5 @@ mod test {
         bld.add_answer("seas.upenn.edu", T::A, C::IN, 7130, ipnum);
         let result = bld.build().unwrap();
         println!("{:?}", result);
-
-        [91, 217, 129, 128, 0, 1, 0, 1, 0, 0, 0, 0, 4, 115, 101, 97, 115, 5, 117, 112, 101, 110, 110, 3, 101, 100, 117, 0, 0, 1, 0, 1, 4, 115, 101, 97, 115, 5, 117, 112, 101, 110, 110, 3, 101, 100, 117, 0, 0, 1, 0, 1, 0, 0, 27, 218, 0, 4, 158, 130, 68, 91]
     }
 }
