@@ -94,18 +94,20 @@ impl Builder {
     /// NOTE: You need to add all you questions first before adding answers.
     /// # Panics
     /// 
-    /// * There are already 65535 answers in the buffer.
+    /// * There are too many answers in the buffer.
     /// * When name is invalid
     // TODO(david-cao): untested, only works for type A
     pub fn add_answer(&mut self, aname: &str, atype: Type,
-        aclass: Class, ttl: u32, data: u32) -> &mut Builder
+        aclass: Class, ttl: u32, data: Vec<u8>) -> &mut Builder
     {
         self.write_name(aname);
         self.buf.write_u16::<BigEndian>(atype as u16).unwrap();
         self.buf.write_u16::<BigEndian>(aclass as u16).unwrap();
         self.buf.write_u32::<BigEndian>(ttl).unwrap();
-        self.buf.write_u16::<BigEndian>(4).unwrap();
-        self.buf.write_u32::<BigEndian>(data).unwrap();
+        let ln = data.len() as u16;
+        self.buf.write_u16::<BigEndian>(ln).unwrap();
+        self.buf.extend(data);
+        // self.buf.write_u32::<BigEndian>(data).unwrap();
         let olda = BigEndian::read_u16(&self.buf[6..8]);
         if olda == 65535 {
             panic!("Too many answers");
