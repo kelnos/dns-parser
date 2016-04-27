@@ -128,7 +128,6 @@ impl Builder {
             let offset = self.labels.get(name).unwrap();
             let pointer : u16 = offset | OFFSET_FLAG;
             self.buf.write_u16::<BigEndian>(pointer).unwrap();
-            println!("{:?}", self.labels);
         } else {
             let offset = self.buf.len() as u16;
             self.labels.insert(name.to_owned(), offset);
