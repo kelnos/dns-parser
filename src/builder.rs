@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use byteorder::{ByteOrder, BigEndian, WriteBytesExt};
 
 use {Opcode, ResponseCode, Header, QueryType, QueryClass, Type, Class};
@@ -8,7 +10,10 @@ use {Opcode, ResponseCode, Header, QueryType, QueryClass, Type, Class};
 /// much of functionality is not implemented yet.
 pub struct Builder {
     buf: Vec<u8>,
+    labels: HashMap<String, u16>,
 }
+
+pub const OFFSET_FLAG : u16 = 0b1100_0000_0000_0000;
 
 impl Builder {
     /// Creates a new query
@@ -33,7 +38,7 @@ impl Builder {
         };
         buf.extend([0u8; 12].iter());
         head.write(&mut buf[..12]);
-        Builder { buf: buf }
+        Builder { buf: buf, labels: HashMap::new() }
     }
 
 
@@ -61,7 +66,7 @@ impl Builder {
         };
         buf.extend([0u8; 12].iter());
         head.write(&mut buf[..12]);
-        Builder { buf: buf }
+        Builder { buf: buf, labels: HashMap::new() }
     }
     /// Adds a question to the packet
     ///
@@ -115,15 +120,28 @@ impl Builder {
         BigEndian::write_u16(&mut self.buf[6..8], olda+1);
         self
     }
+
+
     fn write_name(&mut self, name: &str) {
-        for part in name.split('.') {
-            assert!(part.len() < 63);
-            let ln = part.len() as u8;
-            self.buf.push(ln);
-            self.buf.extend(part.as_bytes());
+        if self.labels.contains_key(name) {
+            // write offset to buffer
+            let offset = self.labels.get(name).unwrap();
+            let pointer : u16 = offset | OFFSET_FLAG;
+            self.buf.write_u16::<BigEndian>(pointer).unwrap();
+            println!("{:?}", self.labels);
+        } else {
+            let offset = self.buf.len() as u16;
+            self.labels.insert(name.to_owned(), offset);
+            for part in name.split('.') {
+                assert!(part.len() < 63);
+                let ln = part.len() as u8;
+                self.buf.push(ln);
+                self.buf.extend(part.as_bytes());
+            }
+            self.buf.push(0);
         }
-        self.buf.push(0);
     }
+
     /// Returns the final packet
     ///
     /// When packet is not truncated method returns `Ok(packet)`. If
