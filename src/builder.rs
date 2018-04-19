@@ -138,10 +138,12 @@ impl Builder {
             let offset = self.buf.len() as u16;
             self.labels.insert(name.to_owned(), offset);
             for part in name.split('.') {
-                assert!(part.len() < 63);
-                let ln = part.len() as u8;
-                self.buf.push(ln);
-                self.buf.extend(part.as_bytes());
+                if part.len() > 0 {
+                    assert!(part.len() < 63);
+                    let ln = part.len() as u8;
+                    self.buf.push(ln);
+                    self.buf.extend(part.as_bytes());
+                }
             }
             self.buf.push(0);
         }
